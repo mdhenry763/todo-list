@@ -4,7 +4,8 @@
 ## Instructions
 1. ```flutter clean``` - clean pubsec.yaml
 1. ```flutter pub get``` - get all dependecies
-2. ```flutter build apk --release``` -build apk
+2. ```flutter run --debug``` - run in VS Code with emulator
+3. ```flutter build apk --release``` - build apk
 > .env file is saved locally ask developer for URL and KEY
 
 ## General
