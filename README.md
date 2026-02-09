@@ -2,18 +2,23 @@
 > **Note**: This is a simple todo list app for fullstack showcase
 
 ## Instructions
-1. ```flutter clean```
-1. ```flutter pub get```
+1. ```flutter clean``` - clean pubsec.yaml
+1. ```flutter pub get``` - get all dependecies
+2. ```flutter build apk --release``` -build apk
 > .env file is saved locally ask developer for URL and KEY
+
+## General
 
 ### Tech Stack
 - Flutter - Dart
 - Edge Functions - Supabase + Typescript
 - PostgreSQL
+- Supabase CLI - Local Dev
+> Used supabase functions deploy create_user_profile --project-ref project_id to deploy edge functions
 
 ### Code Snippet
 > Shows basic profiles table
-```
+```sql
 -- Profiles Table
 CREATE TABLE profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -49,3 +54,11 @@ CREATE TABLE profiles (
   <li>Audit Logging: Centralized logging of all operations</li>
   <li>Fine-grained Control: Can implement complex permissions beyond RLS</li>
 </ol>
+
+## Extra
+
+### Emulator view
+> Screen-shot with snipping tool
+
+<img width="466" height="933" alt="image" src="https://github.com/user-attachments/assets/4b893c53-8c95-44d4-b2d3-1bda69bd96c7" />
+
