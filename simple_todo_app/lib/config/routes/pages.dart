@@ -5,11 +5,11 @@ class AppPages {
   static const String splash = '/splash';
   static const String home = '/home';
 
-  static final routes = [
-    GetPage(
-      name: AppPages.splash,
-      page: () => const SplashScreen(),
-      binding: AppInitBinding(),
-    )
-  ]
+  // static final routes = [
+  // //   GetPage(
+  // //     name: AppPages.splash,
+  // //     page: () => const SplashScreen(),
+  // //     binding: AppInitBinding(),
+  // //   )
+  // // ]
 }

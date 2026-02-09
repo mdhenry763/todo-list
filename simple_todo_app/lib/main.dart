@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:simple_todo_app/data/services/supabase_service.dart';
@@ -9,11 +10,12 @@ import 'package:simple_todo_app/features/auth/presentation/screens/profile_setup
 import 'package:simple_todo_app/features/home/presentation/screens/home_screen.dart';
 import 'package:simple_todo_app/features/task/presentation/screens/create_task_screen.dart';
 import 'package:simple_todo_app/features/task/presentation/screens/task_detail_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -24,9 +26,17 @@ void main() async {
     ),
   );
 
+  await dotenv.load(fileName: '.env');
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_PUBLIC_URL']!,
+    anonKey: dotenv.env['SUPABASE_PUBLIC_KEY']!,
+  );
+
   // Initialize Supabase Service
   await Get.putAsync(() => SupabaseService().init());
-  
+
   // Initialize Auth Controller
   Get.put(AuthController());
 
@@ -52,9 +62,7 @@ class MyApp extends StatelessWidget {
           background: AppColors.background,
           error: AppColors.error,
         ),
-        textTheme: GoogleFonts.interTextTheme(
-          ThemeData.dark().textTheme,
-        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.background,
           elevation: 0,
@@ -64,9 +72,7 @@ class MyApp extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
-          iconTheme: const IconThemeData(
-            color: AppColors.textPrimary,
-          ),
+          iconTheme: const IconThemeData(color: AppColors.textPrimary),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.primary,
@@ -103,10 +109,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/splash',
       getPages: [
-        GetPage(
-          name: '/splash',
-          page: () => const SplashScreen(),
-        ),
+        GetPage(name: '/splash', page: () => const SplashScreen()),
         GetPage(
           name: '/auth',
           page: () => const AuthScreen(),
@@ -164,11 +167,7 @@ class SplashScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(AppSizes.radiusXL),
               ),
-              child: const Icon(
-                Icons.task_alt,
-                size: 80,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.task_alt, size: 80, color: Colors.white),
             ),
             const SizedBox(height: AppSizes.paddingXL),
             Text(
