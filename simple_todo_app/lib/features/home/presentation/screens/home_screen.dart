@@ -45,7 +45,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const Spacer(),
                       IconButton(
-                        onPressed: () => Get.toNamed('/profile'),
+                        onPressed: () {
+                          print('Navigating to profile screen');
+                          Get.toNamed('/profile-setup');
+                        },
                         icon: Obx(() {
                           final user = authController.currentUser.value;
                           if (user?.profileImageUrl != null) {
@@ -59,7 +62,10 @@ class HomeScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(AppSizes.paddingS),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppColors.primary, AppColors.secondary],
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.secondary,
+                                ],
                               ),
                               shape: BoxShape.circle,
                             ),
@@ -79,10 +85,13 @@ class HomeScreen extends StatelessWidget {
               // Greeting
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingM,
+                  ),
                   child: Obx(() {
                     final user = authController.currentUser.value;
-                    final firstName = user?.fullName.split(' ').first ?? 'there';
+                    final firstName =
+                        user?.fullName.split(' ').first ?? 'there';
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -108,82 +117,94 @@ class HomeScreen extends StatelessWidget {
                   }),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSizes.paddingL)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSizes.paddingL),
+              ),
 
               // Task Progress Card
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-                  child: Obx(() => Container(
-                    padding: const EdgeInsets.all(AppSizes.paddingM),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppStrings.taskProgress,
-                                style: GoogleFonts.inter(
-                                  fontSize: AppSizes.textM,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: AppSizes.paddingXS),
-                              Text(
-                                '${taskController.completedTasks}/${taskController.totalTasks} task done',
-                                style: GoogleFonts.inter(
-                                  fontSize: AppSizes.textS,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: Stack(
-                            children: [
-                              CircularProgressIndicator(
-                                value: taskController.progressPercentage / 100,
-                                backgroundColor: AppColors.background,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColors.info,
-                                ),
-                                strokeWidth: 8,
-                              ),
-                              Center(
-                                child: Text(
-                                  '${taskController.progressPercentage}%',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingM,
+                  ),
+                  child: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.all(AppSizes.paddingM),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppStrings.taskProgress,
                                   style: GoogleFonts.inter(
-                                    fontSize: AppSizes.textL,
-                                    fontWeight: FontWeight.w800,
+                                    fontSize: AppSizes.textM,
+                                    fontWeight: FontWeight.w600,
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: AppSizes.paddingXS),
+                                Text(
+                                  '${taskController.completedTasks}/${taskController.totalTasks} task done',
+                                  style: GoogleFonts.inter(
+                                    fontSize: AppSizes.textS,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                          SizedBox(
+                            width: 80,
+                            height: 80,
+                            child: Stack(
+                              children: [
+                                CircularProgressIndicator(
+                                  value:
+                                      taskController.progressPercentage / 100,
+                                  backgroundColor: AppColors.background,
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        AppColors.info,
+                                      ),
+                                  strokeWidth: 8,
+                                ),
+                                Center(
+                                  child: Text(
+                                    '${taskController.progressPercentage}%',
+                                    style: GoogleFonts.inter(
+                                      fontSize: AppSizes.textL,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSizes.paddingL)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSizes.paddingL),
+              ),
 
               // Today's Tasks Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingM,
+                  ),
                   child: Text(
-                    AppStrings.todaysTasks,
+                    AppStrings.allTasks,
                     style: GoogleFonts.inter(
                       fontSize: AppSizes.textL,
                       fontWeight: FontWeight.w700,
@@ -192,15 +213,20 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSizes.paddingM)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSizes.paddingM),
+              ),
 
               // Tasks Grid
               Obx(() {
-                if (taskController.isLoading.value && taskController.tasks.isEmpty) {
+                if (taskController.isLoading.value &&
+                    taskController.tasks.isEmpty) {
                   return const SliverFillRemaining(
                     child: Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     ),
                   );
@@ -239,37 +265,40 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 }
+                print("${taskController.tasks.length} loaded tasks");
 
                 return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: AppSizes.paddingM,
-                      mainAxisSpacing: AppSizes.paddingM,
-                      childAspectRatio: 0.85,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final task = taskController.tasks[index];
-                        return TaskCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingM,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final task = taskController.tasks[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppSizes.paddingM,
+                        ),
+                        child: TaskCard(
                           task: task,
-                          onTap: () => Get.toNamed('/task-detail', arguments: task),
-                        );
-                      },
-                      childCount: taskController.tasks.length,
-                    ),
+                          onTap: () =>
+                              Get.toNamed('/task-detail', arguments: task),
+                        ),
+                      );
+                    }, childCount: taskController.tasks.length),
                   ),
                 );
               }),
-              
+
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed('/create-task'),
+        onPressed: () {
+          Get.toNamed('/create-task');
+          taskController.loadTasks();
+        },
         backgroundColor: AppColors.primary,
         icon: const Icon(Iconsax.add, color: Colors.white),
         label: Text(

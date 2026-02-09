@@ -65,6 +65,7 @@ class AppStrings {
   static const String taskProgress = 'Task Progress';
   static const String urgentTasks = 'Urgent tasks';
   static const String todaysTasks = "Today's tasks";
+  static const String allTasks = "All tasks";
   static const String createTask = 'Create Task';
   static const String updateTask = 'Update Task';
   static const String deleteTask = 'Delete Task';

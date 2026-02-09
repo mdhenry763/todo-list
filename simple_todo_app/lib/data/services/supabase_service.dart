@@ -46,7 +46,10 @@ class SupabaseService extends GetxService {
         password: password,
       );
       return response;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Sign in error: $e');
+
+      print('Stack trace: $stackTrace');
       throw Exception('Sign in failed: $e');
     }
   }
@@ -62,6 +65,8 @@ class SupabaseService extends GetxService {
   // Profile Methods
   Future<UserProfile?> getProfile(String userId) async {
     try {
+      //Showing direct query for demonstration, 
+      //but ideally this should be an edge function to avoid exposing the profiles table directly
       final response = await _client
           .from('profiles')
           .select()
@@ -82,25 +87,24 @@ class SupabaseService extends GetxService {
     String? profileImageUrl,
   }) async {
     try {
-      final now = DateTime.now();
-      final profileData = {
-        'id': userId,
-        'email': email,
-        'full_name': fullName,
-        'ultimate_goal': ultimateGoal,
-        'profile_image_url': profileImageUrl,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      };
+      final response = await _client.functions.invoke(
+        'create_user_profile',
+        body: {
+          'full_name': fullName,
+          'ultimate_goal': ultimateGoal,
+          'profile_image_url': profileImageUrl,
+        },
+      );
 
-      final response = await _client
-          .from('profiles')
-          .insert(profileData)
-          .select()
-          .single();
+      if (response.status != 201) {
+        throw Exception(response.data['message'] ?? 'Failed to create profile');
+      }
 
-      return UserProfile.fromJson(response);
-    } catch (e) {
+      print('${response.data['profile']}');
+      return UserProfile.fromJson(response.data['profile']);
+    } catch (e, stackTrace) {
+      print('Error creating profile: $e');
+      print('Stack trace: $stackTrace');
       throw Exception('Failed to create profile: $e');
     }
   }
@@ -116,20 +120,29 @@ class SupabaseService extends GetxService {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
+      final now = DateTime.now();
+
       if (fullName != null) updateData['full_name'] = fullName;
       if (ultimateGoal != null) updateData['ultimate_goal'] = ultimateGoal;
       if (profileImageUrl != null)
         updateData['profile_image_url'] = profileImageUrl;
 
-      final response = await _client
-          .from('profiles')
-          .update(updateData)
-          .eq('id', userId)
-          .select()
-          .single();
+      final response = await _client.functions.invoke(
+        'update_user_profile',
+        body: {
+          'user_id': userId,
+          'full_name': fullName,
+          'ultimate_goal': ultimateGoal,
+          'profile_image_url': profileImageUrl,
+          'updated_at': now.toIso8601String(),
+        },
+      );
 
-      return UserProfile.fromJson(response);
-    } catch (e) {
+      print('${response.data['profile']}');
+      return UserProfile.fromJson(response.data['profile']);
+    } catch (e, stackTrace) {
+      print('Error updating profile: $e');
+      print('Stack trace: $stackTrace');
       throw Exception('Failed to update profile: $e');
     }
   }
@@ -137,13 +150,20 @@ class SupabaseService extends GetxService {
   // Task Methods
   Future<List<Task>> getTasks(String userId) async {
     try {
-      final response = await _client
-          .from('tasks')
-          .select('*, sub_tasks(*)')
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      final response = await _client.functions.invoke(
+        'get_tasks',
+        method: HttpMethod.get,
+      );
 
-      return (response as List).map((task) => Task.fromJson(task)).toList();
+      if (response.status != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to get tasks');
+      }
+
+      final tasks = (response.data['tasks'] as List)
+          .map((task) => Task.fromJson(task))
+          .toList();
+
+      return tasks;
     } catch (e) {
       throw Exception('Failed to get tasks: $e');
     }
@@ -159,29 +179,23 @@ class SupabaseService extends GetxService {
     String? category,
   }) async {
     try {
-      final now = DateTime.now();
-      final taskData = {
-        'user_id': userId,
-        'title': title,
-        'description': description,
-        'due_date': dueDate?.toIso8601String(),
-        'due_time': dueTime?.toIso8601String(),
-        'progress_percentage': 0,
-        'status': TaskStatus.pending.name,
-        'priority': (priority ?? TaskPriority.medium).name,
-        'category': category,
-        'attachments': [],
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      };
+      final response = await _client.functions.invoke(
+        'create_task',
+        body: {
+          'title': title,
+          'description': description,
+          'due_date': dueDate?.toIso8601String(),
+          'due_time': dueTime?.toIso8601String(),
+          'priority': (priority ?? TaskPriority.medium).name,
+          'category': category,
+        },
+      );
 
-      final response = await _client
-          .from('tasks')
-          .insert(taskData)
-          .select()
-          .single();
+      if (response.status != 201) {
+        throw Exception(response.data['message'] ?? 'Failed to create task');
+      }
 
-      return Task.fromJson(response);
+      return Task.fromJson(response.data['task']);
     } catch (e) {
       throw Exception('Failed to create task: $e');
     }
@@ -199,28 +213,29 @@ class SupabaseService extends GetxService {
     String? category,
   }) async {
     try {
-      final updateData = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      final body = <String, dynamic>{'task_id': taskId};
 
-      if (title != null) updateData['title'] = title;
-      if (description != null) updateData['description'] = description;
-      if (dueDate != null) updateData['due_date'] = dueDate.toIso8601String();
-      if (dueTime != null) updateData['due_time'] = dueTime.toIso8601String();
-      if (progressPercentage != null)
-        updateData['progress_percentage'] = progressPercentage;
-      if (status != null) updateData['status'] = status.name;
-      if (priority != null) updateData['priority'] = priority.name;
-      if (category != null) updateData['category'] = category;
+      if (title != null) body['title'] = title;
+      if (description != null) body['description'] = description;
+      if (dueDate != null) body['due_date'] = dueDate.toIso8601String();
+      if (dueTime != null) body['due_time'] = dueTime.toIso8601String();
+      if (progressPercentage != null) {
+        body['progress_percentage'] = progressPercentage;
+      }
+      if (status != null) body['status'] = status.name;
+      if (priority != null) body['priority'] = priority.name;
+      if (category != null) body['category'] = category;
 
-      final response = await _client
-          .from('tasks')
-          .update(updateData)
-          .eq('id', taskId)
-          .select()
-          .single();
+      final response = await _client.functions.invoke(
+        'update_task',
+        body: body,
+      );
 
-      return Task.fromJson(response);
+      if (response.status != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to update task');
+      }
+
+      return Task.fromJson(response.data['task']);
     } catch (e) {
       throw Exception('Failed to update task: $e');
     }
@@ -228,33 +243,37 @@ class SupabaseService extends GetxService {
 
   Future<void> deleteTask(String taskId) async {
     try {
-      await _client.from('tasks').delete().eq('id', taskId);
+      final response = await _client.functions.invoke(
+        'delete_task',
+        body: {'task_id': taskId},
+        method: HttpMethod.delete,
+      );
+
+      if (response.status != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to delete task');
+      }
     } catch (e) {
       throw Exception('Failed to delete task: $e');
     }
   }
 
-  // SubTask Methods
+  // SubTask Methods using Edge Functions
   Future<SubTask> createSubTask({
     required String taskId,
     required String title,
     required int orderIndex,
   }) async {
     try {
-      final subTaskData = {
-        'task_id': taskId,
-        'title': title,
-        'is_completed': false,
-        'order_index': orderIndex,
-      };
+      final response = await _client.functions.invoke(
+        'create_subtask',
+        body: {'task_id': taskId, 'title': title, 'order_index': orderIndex},
+      );
 
-      final response = await _client
-          .from('sub_tasks')
-          .insert(subTaskData)
-          .select()
-          .single();
+      if (response.status != 201) {
+        throw Exception(response.data['message'] ?? 'Failed to create subtask');
+      }
 
-      return SubTask.fromJson(response);
+      return SubTask.fromJson(response.data['sub_task']);
     } catch (e) {
       throw Exception('Failed to create subtask: $e');
     }
@@ -266,19 +285,21 @@ class SupabaseService extends GetxService {
     bool? isCompleted,
   }) async {
     try {
-      final updateData = <String, dynamic>{};
+      final body = <String, dynamic>{'subtask_id': subTaskId};
 
-      if (title != null) updateData['title'] = title;
-      if (isCompleted != null) updateData['is_completed'] = isCompleted;
+      if (title != null) body['title'] = title;
+      if (isCompleted != null) body['is_completed'] = isCompleted;
 
-      final response = await _client
-          .from('sub_tasks')
-          .update(updateData)
-          .eq('id', subTaskId)
-          .select()
-          .single();
+      final response = await _client.functions.invoke(
+        'update_subtask',
+        body: body,
+      );
 
-      return SubTask.fromJson(response);
+      if (response.status != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to update subtask');
+      }
+
+      return SubTask.fromJson(response.data['sub_task']);
     } catch (e) {
       throw Exception('Failed to update subtask: $e');
     }
@@ -286,7 +307,15 @@ class SupabaseService extends GetxService {
 
   Future<void> deleteSubTask(String subTaskId) async {
     try {
-      await _client.from('sub_tasks').delete().eq('id', subTaskId);
+      final response = await _client.functions.invoke(
+        'delete_subtask',
+        body: {'subtask_id': subTaskId},
+        method: HttpMethod.delete,
+      );
+
+      if (response.status != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to delete subtask');
+      }
     } catch (e) {
       throw Exception('Failed to delete subtask: $e');
     }

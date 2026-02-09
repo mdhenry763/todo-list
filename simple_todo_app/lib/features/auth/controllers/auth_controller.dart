@@ -35,10 +35,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> signUp({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signUp({required String email, required String password}) async {
     try {
       isLoading.value = true;
       errorMessage.value = null;
@@ -65,10 +62,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
       isLoading.value = true;
       errorMessage.value = null;
@@ -87,8 +81,10 @@ class AuthController extends GetxController {
           Get.offAllNamed('/profile-setup');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage.value = e.toString();
+      print('Sign in error: $e');
+      print('Stack trace: $stackTrace');
       Get.snackbar(
         'Error',
         errorMessage.value!,
@@ -142,8 +138,10 @@ class AuthController extends GetxController {
 
       currentUser.value = profile;
       Get.offAllNamed('/home');
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage.value = e.toString();
+      print(e);
+      print(stackTrace);
       Get.snackbar(
         'Error',
         errorMessage.value!,
@@ -175,7 +173,9 @@ class AuthController extends GetxController {
       );
 
       currentUser.value = profile;
-      
+
+      Get.back();
+
       Get.snackbar(
         'Success',
         'Profile updated successfully',

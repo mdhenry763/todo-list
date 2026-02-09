@@ -73,7 +73,7 @@ class TaskController extends GetxController {
       );
 
       tasks.insert(0, newTask);
-      filteredTasks.insert(0, newTask);
+      //filteredTasks.insert(0, newTask);
 
       Get.back();
       Get.snackbar(
