@@ -56,7 +56,7 @@ class SupabaseService extends GetxService {
 
   Future<void> signOut() async {
     try {
-      await _client.auth.signOut();
+      await _client.auth.signOut(scope: SignOutScope.global);
     } catch (e) {
       throw Exception('Sign out failed: $e');
     }

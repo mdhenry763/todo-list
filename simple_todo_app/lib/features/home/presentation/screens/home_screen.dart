@@ -46,8 +46,9 @@ class HomeScreen extends StatelessWidget {
                       const Spacer(),
                       IconButton(
                         onPressed: () {
-                          print('Navigating to profile screen');
-                          Get.toNamed('/profile-setup');
+                          print('Navigating to profile setup screen');
+                          Get.toNamed('/profile');
+                          //Get.toNamed('/profile-setup', arguments: authController.currentUser.value);
                         },
                         icon: Obx(() {
                           final user = authController.currentUser.value;

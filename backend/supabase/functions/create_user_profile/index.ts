@@ -1,19 +1,21 @@
 import { Logger } from "../_shared/logger.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
-console.log("Hello from Functions!");
+import { getAuthenticatedUser } from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
-  const component = "User Creation";
-  Logger.infoStructured("user creation request received", component, {
-    key: "method",
-    value: req.method,
-  });
+  const component = "Create Profile";
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
+    Logger.infoStructured("Create profile request received", component, {
+      key: "method",
+      value: req.method,
+    });
+
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ message: "Method not allowed" }), {
         status: 405,
@@ -21,10 +23,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    // Authenticate user
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
       return new Response(
-        JSON.stringify({ message: "Authorization required" }),
+        JSON.stringify({ message: "Authentication required" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -32,59 +35,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: { headers: { Authorization: authHeader } },
-      },
-    );
+    const { supabase, userId } = auth;
 
-    // Get authenticated user
-    const { data: { user: authUser }, error: authError } = await supabase.auth
-      .getUser();
-
-    if (authError || !authUser) {
-      return new Response(JSON.stringify({ message: "Invalid auth token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Check if user already exists
-    const { data: existingUser, error: checkError } = await supabase
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", authUser.id)
+      .eq("id", userId)
       .single();
 
-    if (checkError && checkError.code !== "PGRST116") {
+    if (existingProfile) {
       return new Response(
-        JSON.stringify({
-          message: "Database error",
-          error: checkError.message,
-        }),
+        JSON.stringify({ message: "Profile already exists" }),
         {
-          status: 500,
+          status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
 
-    if (existingUser) {
-      return new Response(JSON.stringify({ message: "User already exists" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Parse request body
-    const {
-      full_name,
-      profile_image_url,
-      ultimate_goal,
-      email
-    } = await req.json();
+    const { full_name, profile_image_url, ultimate_goal } = await req.json();
 
     // Validate required fields
     if (!full_name?.trim()) {
@@ -97,9 +68,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!profile_image_url?.trim()) {
+    if (!ultimate_goal?.trim()) {
       return new Response(
-        JSON.stringify({ message: "Profile image URL is required" }),
+        JSON.stringify({ message: "Ultimate goal is required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,33 +78,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!ultimate_goal?.trim()) {
-      return new Response(JSON.stringify({ message: "Ultimate goal is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Get user email
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // Prepare user data - simple booleans only
-    const userData = {
-      id: authUser.id,
-      email: authUser.email || authUser.user_metadata?.phone || email || null,
+    // Create profile
+    const now = new Date().toISOString();
+    const profileData = {
+      id: userId,
+      email: user?.email || null,
       full_name: full_name.trim(),
       profile_image_url: profile_image_url?.trim() || null,
       ultimate_goal: ultimate_goal.trim(),
+      created_at: now,
+      updated_at: now,
     };
 
-    // Insert user
-    const { data: user, error: insertError } = await supabase
+    const { data: profile, error: insertError } = await supabase
       .from("profiles")
-      .insert(userData)
+      .insert(profileData)
       .select()
       .single();
 
     if (insertError) {
+      Logger.error("Failed to create profile", component, insertError);
       return new Response(
         JSON.stringify({
-          message: "Failed to create user",
+          message: "Failed to create profile",
           error: insertError.message,
         }),
         {
@@ -143,16 +113,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    Logger.infoStructured("Profile created successfully", component, {
+      key: "userId",
+      value: userId,
+    });
+
     return new Response(
       JSON.stringify({
-        message: "User created successfully",
-        user: {
-          id: user.id,
-          full_name: user.full_name,
-          email: user.email,
-          profile_image_url: user.profile_image_url,
-          ultimate_goal: user.ultimate_goal,
-        },
+        message: "Profile created successfully",
+        profile,
       }),
       {
         status: 201,
@@ -160,10 +129,11 @@ Deno.serve(async (req) => {
       },
     );
   } catch (err) {
+    Logger.error("Internal server error", component, err);
     return new Response(
       JSON.stringify({
         message: "Internal server error",
-        error: err ?? "Failed",
+        error: err instanceof Error ? err.message : "Unknown error",
       }),
       {
         status: 500,
@@ -172,15 +142,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/create_user_profile' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
-import 'package:simple_todo_app/config/bindings/app_init_binding.dart';
 import 'package:simple_todo_app/features/auth/presentation/screens/auth_screen.dart';
-import 'package:simple_todo_app/features/auth/presentation/screens/profile_setup.dart';
+import 'package:simple_todo_app/features/auth/presentation/screens/profile_form_screen.dart';
+import 'package:simple_todo_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:simple_todo_app/features/home/presentation/screens/home_screen.dart';
 import 'package:simple_todo_app/features/task/presentation/screens/create_task_screen.dart';
 import 'package:simple_todo_app/features/task/presentation/screens/task_detail_screen.dart';
@@ -20,7 +20,12 @@ class AppPages {
     ),
     GetPage(
       name: '/profile-setup',
-      page: () => const ProfileSetupScreen(),
+      page: () => const ProfileFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: '/profile',
+      page: () => const ProfileScreen(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
