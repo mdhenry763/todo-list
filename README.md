@@ -1,5 +1,6 @@
 # Simple Todo List App
 > **Note**: This is a simple todo list app for fullstack showcase
+> **NOTE**: Supabase project closed
 
 ## Instructions
 1. ```flutter clean``` - clean pubsec.yaml
